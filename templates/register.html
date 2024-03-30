@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block head %}
-<h1>Login</h1>
+<h1>Register</h1>
 {% endblock %}
 
 {% block body %}
@@ -12,14 +12,26 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-<form method="POST" action="{{ url_for('login') }}">
+<form method="POST" action="{{ url_for('register') }}">
     <input type="text"
            name="username"
            placeholder="Username">
+        <div style="line-height:150%;">
+            <br>
+        </div>
     <input type="password"
            name="password"
            placeholder="Password">
-    <button type="submit">Login</button>
+        <div style="line-height:150%;">
+            <br>
+        </div>
+    <input type="email"
+           name="email"
+           placeholder="Email">
+        <div style="line-height:150%;">
+            <br>
+        </div>
+    <button type="submit">Register</button>
 </form>
 
 {% endblock %}
