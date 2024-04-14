@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<h1>Food Search</h1>
+{% endblock %}
+
+{% block body %}
+    <!-- Displays any error messages. -->
+    {% if err %}
+        <p style="color: red">{{err}}</p>
+    {% endif %}
+    <!-- form for the search. -->
+    <form method="POST" action="{{ url_for('food_search') }}")>
+        <input type="text" 
+               name="food" 
+               placeholder="Enter food">
+        <button type="submit">Search</button>
+    </form>
+    <!-- displays the food. -->
+    {% if food %}
+        <p>{{food}}</p>
+    {% endif %}
+    {% if img %}
+        <img src="{{img}}" style="max-width: 100%; height: auto; margin-top: 20px;">
+    {% endif %}
+{% endblock %}
+
