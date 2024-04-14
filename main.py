@@ -1,7 +1,9 @@
+import requests
 from flask import Flask, redirect, url_for, render_template, request, session, flash
 from datetime import timedelta
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
+
 
 
 class Base(DeclarativeBase):
@@ -121,6 +123,46 @@ def logout():
     flash("You have been logged out!", "info")
     return redirect(url_for("login"))
 
+
+# https://stackoverflow.com/questions/7771011/how-can-i-parse-read-and-use-json-in-python
+# https://stackoverflow.com/questions/6998943/python-requests-module-json-responses?rq=3
+# pip install jq
+# lxml
+# edamam nutrition database api
+# some other palce upc
+
+# https://spoonacular.com/food-api/docs <-- MEAL PLANS AND A FUCK TON OF STUFF
+@app.route("/food_search", methods=['POST', 'GET'])
+def food_search():
+    food = None
+    err = None
+    img = None
+    if request.method == 'POST':
+        food = request.form['food']
+        return redirect(url_for("food_search", food=food))
+    else:
+        if request.args.get('food'):
+            foodname = request.args.get('food')
+            url = f"https://api.spoonacular.com/food/ingredients/autocomplete?apiKey=b643fbc6d8b149549b4337bcd9d8263e&query={foodname}&number=1"
+            r = requests.get(url)
+            data = r.json()
+            if data:
+                item = data[0]
+                food = item['name']
+                img = get_image(food)
+            else:
+                err = "Ingredient not found!"
+
+        return render_template("food_search.html", food=food, err=err, img=img)
+
+def get_image(food_id=None, img_type=None):
+    if isinstance(food_id, str):
+        url = f"https://img.spoonacular.com/ingredients_500x500/{food_id}.jpg"
+        return url
+    if (isinstance(food_id, int)) and (img_type is not None):
+        url = f"https://img.spoonacular.com/products/{food_id}-636x393.{img_type}"
+        return url
+    return None
 
 if __name__ == "__main__":
     with app.app_context():
