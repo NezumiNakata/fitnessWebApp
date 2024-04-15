@@ -143,7 +143,7 @@ def food_search():
     else:
         if request.args.get('food'):
             foodname = request.args.get('food')
-            url = f"https://api.spoonacular.com/food/ingredients/autocomplete?apiKey=b643fbc6d8b149549b4337bcd9d8263e&query={foodname}&number=1"
+            url = f"https://api.spoonacular.com/food/ingredients/autocomplete?query={foodname}&number=1"
             r = requests.get(url)
             data = r.json()
             if data:
