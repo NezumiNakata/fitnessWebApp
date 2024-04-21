@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, render_template
 
 app = Flask(__name__)
 
@@ -170,12 +170,12 @@ RESULT_PAGE = '''
 </html>
 '''
 
-@app.route('/')
-def home():
-    return HOME_PAGE
+@app.route('/bmi_bmr_calc')
+def bmi_bmr_calc():
+    return render_template("bmi_bmr_calc.html")
 
-@app.route('/calculate', methods=['POST'])
-def calculate_bmi_bmr():
+@app.route('/bmi_bmr_results', methods=['POST'])
+def bmi_bmr_results():
     height = float(request.form['height'])
     weight = float(request.form['weight'])
     age = int(request.form['age'])
@@ -187,7 +187,7 @@ def calculate_bmi_bmr():
     tdee = bmr * activity_factor  # Total Daily Energy Expenditure
 
     category = classify_bmi(bmi)
-    return render_template_string(RESULT_PAGE, bmi="{:.2f}".format(bmi), category=category, bmr="{:.2f}".format(bmr), tdee="{:.2f}".format(tdee))
+    return render_template("bmi_bmr_results.html", bmi="{:.2f}".format(bmi), category=category, bmr="{:.2f}".format(bmr), tdee="{:.2f}".format(tdee))
 
 def calculate_bmr(weight, height, age, gender):
     if gender == 'male':
