@@ -1,178 +1,48 @@
-from flask import Flask, request, render_template
+from flask import Flask, redirect, url_for, render_template, request, session, flash
+from datetime import timedelta
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
+
+
+class Base(DeclarativeBase):
+    pass
+
 
 app = Flask(__name__)
+app.secret_key = 'secretkey'
+app.permanent_session_lifetime = timedelta(days=5)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'thisisasecretkey'
+db = SQLAlchemy(model_class=Base)
+db.init_app(app)
 
-HOME_PAGE = '''
-<!doctype html>
-<html>
-<head>
-    <title>BMI and BMR Calculator</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        input[type=text], input[type=submit], select {
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
-            width: 200px;
-        }
-        input[type=submit] {
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-        }
-        input[type=submit]:hover {
-            background-color: #0056b3;
-        }
-        h1 {
-            color: #333;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>BMI and BMR Calculator</h1>
-        <form action="/calculate" method="post">
-            Height (in centimeters): <br><input type="text" name="height"><br>
-            Weight (in kilograms): <br><input type="text" name="weight"><br>
-            Age: <br><input type="text" name="age"><br>
-            Gender: <br><input type="radio" name="gender" value="male" checked> Male
-                    <input type="radio" name="gender" value="female"> Female<br>
-            Activity Level:
-            <select name="activity">
-                <option value="1.2">Sedentary: little or no exercise</option>
-                <option value="1.375">Lightly active: light exercise/sports 1-3 days/week</option>
-                <option value="1.55">Moderately active: moderate exercise/sports 3-5 days/week</option>
-                <option value="1.725">Very active: hard exercise/sports 6-7 days a week</option>
-                <option value="1.9">Super active: very hard exercise/physical job & exercise 2x/day</option>
-            </select><br>
-            <input type="submit" value="Calculate BMI and BMR">
-        </form>
-    </div>
-</body>
-</html>
-'''
 
-RESULT_PAGE = '''
-<!doctype html>
-<html>
-<head>
-    <title>BMI and BMR Results</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        a {
-            display: inline-block;
-            margin-top: 20px;
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 4px;
-        }
-        a:hover {
-            background-color: #0056b3;
-        }
-        h1, h2 {
-            color: #333;
-        }
-        .results {
-            font-size: 1.2em;
-            margin: 20px 0;
-            padding: 10px;
-            background-color: #f8f8f8;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .results p {
-            margin: 10px 0;
-        }
-        table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f9f9f9;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>BMI and BMR Results</h1>
-        <div class="results">
-            <p>Your BMI is: <strong>{{ bmi }}</strong></p>
-            <p>Category: <strong>{{ category }}</strong></p>
-            <p>Your BMR is: <strong>{{ bmr }} calories/day</strong></p>
-            <p>Your TDEE is: <strong>{{ tdee }} calories/day</strong></p>
-        </div>
-        <table>
-            <tr>
-                <th>Goal</th>
-                <th>Calories/day</th>
-            </tr>
-            <tr>
-                <td>Maintain weight</td>
-                <td>{{ tdee }}</td>
-            </tr>
-            <tr>
-                <td>Mild weight loss <br> 0.5 lb/week</td>
-                <td>{{ tdee|safe|int - 250 }}</td>
-            </tr>
-            <tr>
-                <td>Weight loss <br> 1 lb/week</td>
-                <td>{{ tdee|safe|int - 500 }}</td>
-            </tr>
-            <tr>
-                <td>Extreme weight loss <br> 2 lb/week</td>
-                <td>{{ tdee|safe|int - 1000 }}</td>
-            </tr>
-        </table>
-        <a href="/">Try again</a>
-    </div>
-</body>
-</html>
-'''
+# Initializes the database
+class users(db.Model):
+    _id = db.Column("id", db.Integer, primary_key=True)
+    username = db.Column(db.String(20), nullable=False)
+    password = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(80), nullable=False)
+
+    def __init__(self, username, password, email):
+        self.username = username
+        self.password = password
+        self.email = email
+
+
+@app.route("/")
+def home():
+    user = ""
+    if "user" in session:
+        user = session["user"]
+    return f"Hello! This the main page <h1>HELLO {user}</h1>"
+
 
 @app.route('/bmi_bmr_calc')
 def bmi_bmr_calc():
     return render_template("bmi_bmr_calc.html")
+
 
 @app.route('/bmi_bmr_results', methods=['POST'])
 def bmi_bmr_results():
@@ -188,6 +58,57 @@ def bmi_bmr_results():
 
     category = classify_bmi(bmi)
     return render_template("bmi_bmr_results.html", bmi="{:.2f}".format(bmi), category=category, bmr="{:.2f}".format(bmr), tdee="{:.2f}".format(tdee))
+
+
+@app.route("/user", methods=['POST', 'GET'])
+def user():
+    email = None
+    if "user" in session:
+        username = session["user"]
+
+        if request.method == 'POST':
+            email = request.form["email"]
+            session["email"] = email
+            found_user = users.query.filter(users.username == username).first()
+            found_user.email = email
+            db.session.commit()
+            flash("Email was saved!", "info")
+        else:
+            if "email" in session:
+                email = session['email']
+
+        return render_template("user.html", email=email)
+    else:
+        flash("You are not logged in!")
+        return redirect(url_for("login"))
+
+
+@app.route("/register", methods=['POST', 'GET'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        email = request.form['email']
+        found_user = users.query.filter(users.username == username).first()
+        found_email = users.query.filter(users.email == email).first()
+        if found_user:
+            flash("Username already taken", "error")
+            return redirect(url_for("register"))
+        elif found_email:
+            flash("Email already registered with an account. Try logging in.")
+            return redirect(url_for("register"))
+        else:
+            new_user = users(username, password, email)
+            db.session.add(new_user)
+            db.session.commit()
+            session.permanent = True
+            session["user"] = username
+            session["email"] = email
+            flash("Registered!", "info")
+            return redirect(url_for("user"))
+    else:
+        return render_template("register.html")
+
 
 def calculate_bmr(weight, height, age, gender):
     if gender == 'male':
@@ -205,5 +126,40 @@ def classify_bmi(bmi):
     else:
         return "Obese"
 
-if __name__ == '__main__':
+@app.route("/login", methods=['POST', 'GET'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        print(username, password)
+        found_user = users.query.filter(users.username == username).first()
+        if found_user:
+            found_password = found_user.password
+            if found_password == password:
+                session.permanent = True
+                session["user"] = found_user.username
+                session["email"] = found_user.email
+                flash("Login Successful!", "info")
+                return redirect(url_for("user"))
+            else:
+                flash("Wrong password", "error")
+                return render_template("login.html")
+        else:
+            flash("Wrong username", "error")
+            return render_template("login.html")
+    else:
+        return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    session.pop("email", None)
+    flash("You have been logged out!", "info")
+    return redirect(url_for("login"))
+
+
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
