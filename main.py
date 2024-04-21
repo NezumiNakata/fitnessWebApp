@@ -5,7 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 
 
-
 class Base(DeclarativeBase):
     pass
 
@@ -64,33 +63,6 @@ def user():
         return redirect(url_for("login"))
 
 
-@app.route("/register", methods=['POST', 'GET'])
-def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        email = request.form['email']
-        found_user = users.query.filter(users.username == username).first()
-        found_email = users.query.filter(users.email == email).first()
-        if found_user:
-            flash("Username already taken", "error")
-            return redirect(url_for("register"))
-        elif found_email:
-            flash("Email already registered with an account. Try logging in.")
-            return redirect(url_for("register"))
-        else:
-            new_user = users(username, password, email)
-            db.session.add(new_user)
-            db.session.commit()
-            session.permanent = True
-            session["user"] = username
-            session["email"] = email
-            flash("Registered!", "info")
-            return redirect(url_for("user"))
-    else:
-        return render_template("register.html")
-
-
 @app.route("/login", methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
@@ -122,6 +94,71 @@ def logout():
     session.pop("email", None)
     flash("You have been logged out!", "info")
     return redirect(url_for("login"))
+
+@app.route("/register", methods=['POST', 'GET'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        email = request.form['email']
+        found_user = users.query.filter(users.username == username).first()
+        found_email = users.query.filter(users.email == email).first()
+        if found_user:
+            flash("Username already taken", "error")
+            return redirect(url_for("register"))
+        elif found_email:
+            flash("Email already registered with an account. Try logging in.")
+            return redirect(url_for("register"))
+        else:
+            new_user = users(username, password, email)
+            db.session.add(new_user)
+            db.session.commit()
+            session.permanent = True
+            session["user"] = username
+            session["email"] = email
+            flash("Registered!", "info")
+            return redirect(url_for("user"))
+    else:
+        return render_template("register.html")
+
+
+@app.route('/bmi_bmr_calc')
+def bmi_bmr_calc():
+    return render_template("bmi_bmr_calc.html")
+
+
+@app.route('/bmi_bmr_results', methods=['POST'])
+def bmi_bmr_results():
+    height = float(request.form['height'])
+    weight = float(request.form['weight'])
+    age = int(request.form['age'])
+    gender = request.form['gender']
+    activity_factor = float(request.form['activity'])
+
+    bmi = 10000 * (weight / (height * height))
+    bmr = calculate_bmr(weight, height, age, gender)
+    tdee = bmr * activity_factor  # Total Daily Energy Expenditure
+
+    category = classify_bmi(bmi)
+    return render_template("bmi_bmr_results.html", bmi="{:.2f}".format(bmi), category=category, bmr="{:.2f}".format(bmr), tdee="{:.2f}".format(tdee))
+
+
+def calculate_bmr(weight, height, age, gender):
+    if gender == 'male':
+        return 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
+    else:
+        return 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age)
+
+def classify_bmi(bmi):
+    if bmi < 18.5:
+        return "Underweight"
+    elif bmi < 25:
+        return "Normal weight"
+    elif bmi < 30:
+        return "Overweight"
+    else:
+        return "Obese"
+
 
 
 # https://stackoverflow.com/questions/7771011/how-can-i-parse-read-and-use-json-in-python
